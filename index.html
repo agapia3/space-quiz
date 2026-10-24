@@ -83,6 +83,8 @@
             align-items: center;
             margin-bottom: 12px;
             font-size: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .question-counter {
@@ -97,6 +99,28 @@
             border-radius: 20px;
             font-weight: 600;
             font-size: 13px;
+        }
+
+        .timer {
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .timer.warning {
+            background-color: #f59e0b;
+            color: white;
+            animation: pulse 0.6s ease infinite;
+        }
+
+        .timer.critical {
+            background-color: var(--error);
+            color: white;
+            animation: pulse 0.4s ease infinite;
         }
 
         .progress-bar {
@@ -324,6 +348,7 @@
             <div class="progress-info">
                 <span class="question-counter"><span id="currentQuestion">1</span> of <span id="totalQuestions">10</span></span>
                 <span class="score-counter">Score: <span id="score">0</span>/10</span>
+                <span class="timer" id="timerDisplay">⏱️ 15s</span>
             </div>
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill" style="width: 0%"></div>
@@ -346,6 +371,8 @@
     </div>
 
     <script>
+        const SECONDS_PER_QUESTION = 15;
+        
         const quizData = [
             {
                 question: "Which planet is known as the Red Planet?",
@@ -402,10 +429,66 @@
         let currentQuestion = 0;
         let score = 0;
         let answered = false;
+        let timeRemaining = SECONDS_PER_QUESTION;
+        let timerInterval = null;
 
         function initialize() {
             document.getElementById('totalQuestions').textContent = quizData.length;
             loadQuestion();
+        }
+
+        function startTimer() {
+            stopTimer();
+            timeRemaining = SECONDS_PER_QUESTION;
+            updateTimerDisplay();
+            
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                updateTimerDisplay();
+                
+                if (timeRemaining <= 0) {
+                    stopTimer();
+                    autoAdvanceQuestion();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval !== null) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function updateTimerDisplay() {
+            const timerEl = document.getElementById('timerDisplay');
+            timerEl.textContent = `⏱️ ${timeRemaining}s`;
+            
+            timerEl.classList.remove('warning', 'critical');
+            if (timeRemaining <= 3) {
+                timerEl.classList.add('critical');
+            } else if (timeRemaining <= 5) {
+                timerEl.classList.add('warning');
+            }
+        }
+
+        function autoAdvanceQuestion() {
+            if (answered) return;
+            answered = true;
+            
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+            });
+            
+            setTimeout(() => {
+                if (currentQuestion < quizData.length - 1) {
+                    currentQuestion++;
+                    loadQuestion();
+                } else {
+                    showResults();
+                }
+            }, 1200);
         }
 
         function loadQuestion() {
@@ -425,11 +508,14 @@
 
             updateProgress();
             answered = false;
+            startTimer();
         }
 
         function selectAnswer(index) {
             if (answered) return;
             answered = true;
+            
+            stopTimer();
 
             const question = quizData[currentQuestion];
             const buttons = document.querySelectorAll('.option-btn');
@@ -465,6 +551,7 @@
         }
 
         function showResults() {
+            stopTimer();
             document.querySelector('.quiz-content').classList.remove('active');
             document.querySelector('.results-screen').classList.add('active');
 
@@ -503,9 +590,11 @@
         }
 
         function restartQuiz() {
+            stopTimer();
             currentQuestion = 0;
             score = 0;
             answered = false;
+            timeRemaining = SECONDS_PER_QUESTION;
             document.getElementById('score').textContent = '0';
             document.querySelector('.results-screen').classList.remove('active');
             document.querySelector('.quiz-content').classList.add('active');
