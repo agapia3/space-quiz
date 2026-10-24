@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Exploration Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --error: #ef4444;
+            --border: #e5e7eb;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #1a1a1a;
+                --bg-secondary: #2d2d2d;
+                --text-primary: #ffffff;
+                --text-secondary: #a0a0a0;
+                --accent: #60a5fa;
+                --border: #404040;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-size: 15px;
+            line-height: 1.6;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .quiz-header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: slideDown 0.6s ease;
+        }
+
+        .quiz-header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-top: 0;
+        }
+
+        .quiz-header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .progress-section {
+            margin-bottom: 30px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .question-counter {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .score-counter {
+            background: linear-gradient(135deg, var(--success), #06b6d4);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: var(--bg-secondary);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #8b5cf6);
+            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: 10px;
+        }
+
+        .quiz-content {
+            display: none;
+        }
+
+        .quiz-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .question-text {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-btn {
+            padding: 14px 18px;
+            border: 2px solid var(--border);
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            font-family: inherit;
+            font-weight: 500;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            background-color: var(--bg-primary);
+            transform: translateX(4px);
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .option-btn.correct {
+            background-color: var(--success);
+            border-color: var(--success);
+            color: white;
+            animation: pulse 0.5s ease;
+        }
+
+        .option-btn.incorrect {
+            background-color: var(--error);
+            border-color: var(--error);
+            color: white;
+            animation: shake 0.5s ease;
+        }
+
+        .results-screen {
+            display: none;
+            text-align: center;
+            animation: slideUp 0.5s ease;
+        }
+
+        .results-screen.active {
+            display: block;
+        }
+
+        .emoji-reaction {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: bounce 0.8s ease;
+        }
+
+        .results-score {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .results-text {
+            font-size: 20px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .results-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .performance-message {
+            background-color: var(--bg-secondary);
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid var(--accent);
+        }
+
+        .performance-message.excellent {
+            border-left-color: var(--success);
+        }
+
+        .performance-message.good {
+            border-left-color: #f59e0b;
+        }
+
+        .performance-message.fair {
+            border-left-color: #f59e0b;
+        }
+
+        .restart-btn {
+            padding: 14px 32px;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.02);
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-8px);
+            }
+            75% {
+                transform: translateX(8px);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="quiz-header">
+            <h1>🚀 Space Quiz</h1>
+            <p>Test your knowledge about space exploration</p>
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-info">
+                <span class="question-counter"><span id="currentQuestion">1</span> of <span id="totalQuestions">10</span></span>
+                <span class="score-counter">Score: <span id="score">0</span>/10</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div class="quiz-content active">
+            <div class="question-text" id="questionText"></div>
+            <div class="options" id="optionsContainer"></div>
+        </div>
+
+        <div class="results-screen">
+            <div class="emoji-reaction" id="emojiReaction">🎉</div>
+            <div class="results-text">Quiz Complete!</div>
+            <div class="results-score" id="finalScore">0/10</div>
+            <div class="results-subtitle" id="percentageText">0% correct</div>
+            <div class="performance-message" id="performanceMessage"></div>
+            <button class="restart-btn" onclick="restartQuiz()">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                question: "Which planet is known as the Red Planet?",
+                options: ["Venus", "Mars", "Jupiter", "Saturn"],
+                correct: 1
+            },
+            {
+                question: "What is the name of Earth's natural satellite?",
+                options: ["Phobos", "Europa", "The Moon", "Titan"],
+                correct: 2
+            },
+            {
+                question: "How many planets are in our solar system?",
+                options: ["7", "8", "9", "10"],
+                correct: 1
+            },
+            {
+                question: "Which spacecraft was the first to reach Mars?",
+                options: ["Voyager 1", "Mariner 4", "Viking 1", "Curiosity"],
+                correct: 1
+            },
+            {
+                question: "What is the largest planet in our solar system?",
+                options: ["Saturn", "Neptune", "Jupiter", "Uranus"],
+                correct: 2
+            },
+            {
+                question: "In what year was the first satellite launched into space?",
+                options: ["1957", "1961", "1969", "1972"],
+                correct: 0
+            },
+            {
+                question: "Which astronomer developed the heliocentric model?",
+                options: ["Galileo", "Copernicus", "Newton", "Kepler"],
+                correct: 1
+            },
+            {
+                question: "What is the term for the boundary of a black hole?",
+                options: ["Singularity", "Event Horizon", "Photon Sphere", "Accretion Disk"],
+                correct: 1
+            },
+            {
+                question: "How fast does light travel?",
+                options: ["300,000 km/s", "150,000 km/s", "450,000 km/s", "100,000 km/s"],
+                correct: 0
+            },
+            {
+                question: "Which is the closest star to the Sun?",
+                options: ["Sirius", "Proxima Centauri", "Alpha Centauri A", "Betelgeuse"],
+                correct: 1
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        function initialize() {
+            document.getElementById('totalQuestions').textContent = quizData.length;
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const question = quizData[currentQuestion];
+            document.getElementById('questionText').textContent = question.question;
+            
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option;
+                btn.onclick = () => selectAnswer(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            updateProgress();
+            answered = false;
+        }
+
+        function selectAnswer(index) {
+            if (answered) return;
+            answered = true;
+
+            const question = quizData[currentQuestion];
+            const buttons = document.querySelectorAll('.option-btn');
+            
+            buttons.forEach((btn, i) => {
+                btn.disabled = true;
+                if (i === question.correct) {
+                    btn.classList.add('correct');
+                } else if (i === index && i !== question.correct) {
+                    btn.classList.add('incorrect');
+                }
+            });
+
+            if (index === question.correct) {
+                score++;
+                document.getElementById('score').textContent = score;
+            }
+
+            setTimeout(() => {
+                if (currentQuestion < quizData.length - 1) {
+                    currentQuestion++;
+                    loadQuestion();
+                } else {
+                    showResults();
+                }
+            }, 1200);
+        }
+
+        function updateProgress() {
+            const progress = ((currentQuestion + 1) / quizData.length) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('currentQuestion').textContent = currentQuestion + 1;
+        }
+
+        function showResults() {
+            document.querySelector('.quiz-content').classList.remove('active');
+            document.querySelector('.results-screen').classList.add('active');
+
+            const percentage = Math.round((score / quizData.length) * 100);
+            document.getElementById('finalScore').textContent = `${score}/${quizData.length}`;
+            document.getElementById('percentageText').textContent = `${percentage}% correct`;
+
+            let emoji, message, performanceClass;
+
+            if (percentage === 100) {
+                emoji = '🏆';
+                message = 'Perfect score! You are a space expert!';
+                performanceClass = 'excellent';
+            } else if (percentage >= 80) {
+                emoji = '⭐';
+                message = 'Excellent! You really know your space facts!';
+                performanceClass = 'excellent';
+            } else if (percentage >= 60) {
+                emoji = '👍';
+                message = 'Good job! You have solid space knowledge!';
+                performanceClass = 'good';
+            } else if (percentage >= 40) {
+                emoji = '📚';
+                message = 'Not bad! Keep learning more about space!';
+                performanceClass = 'fair';
+            } else {
+                emoji = '🌌';
+                message = 'Keep exploring! Space is vast and full of mysteries!';
+                performanceClass = 'fair';
+            }
+
+            document.getElementById('emojiReaction').textContent = emoji;
+            const messageEl = document.getElementById('performanceMessage');
+            messageEl.textContent = message;
+            messageEl.className = 'performance-message ' + performanceClass;
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            answered = false;
+            document.getElementById('score').textContent = '0';
+            document.querySelector('.results-screen').classList.remove('active');
+            document.querySelector('.quiz-content').classList.add('active');
+            loadQuestion();
+        }
+
+        initialize();
+    </script>
+</body>
+</html>
