@@ -432,7 +432,29 @@
         let timeRemaining = SECONDS_PER_QUESTION;
         let timerInterval = null;
 
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function shuffleQuestionOptions(question) {
+            const originalIndex = question.correct;
+            const shuffledOptions = shuffleArray(question.options);
+            const newCorrectIndex = shuffledOptions.indexOf(question.options[originalIndex]);
+            
+            return {
+                ...question,
+                options: shuffledOptions,
+                correct: newCorrectIndex
+            };
+        }
+
         function initialize() {
+            quizData = shuffleArray(quizData);
             document.getElementById('totalQuestions').textContent = quizData.length;
             loadQuestion();
         }
@@ -492,7 +514,10 @@
         }
 
         function loadQuestion() {
-            const question = quizData[currentQuestion];
+            let question = quizData[currentQuestion];
+            question = shuffleQuestionOptions(question);
+            quizData[currentQuestion] = question;
+            
             document.getElementById('questionText').textContent = question.question;
             
             const optionsContainer = document.getElementById('optionsContainer');
@@ -591,6 +616,7 @@
 
         function restartQuiz() {
             stopTimer();
+            quizData = shuffleArray(quizData);
             currentQuestion = 0;
             score = 0;
             answered = false;
